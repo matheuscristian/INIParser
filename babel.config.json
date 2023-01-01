@@ -1,0 +1,16 @@
+{
+	"comments": false,
+	"compact": true,
+	"presets": ["@babel/preset-typescript"],
+	"plugins": [
+		[
+			"@babel/plugin-transform-modules-commonjs",
+			{
+				"importInterop": "node"
+			}
+		]
+	],
+    "targets": {
+        "node": "19.3"
+    }
+}
