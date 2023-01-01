@@ -1,0 +1,5 @@
+node_modules/
+.gitignore
+src/
+tsconfig.json
+stylesheet.ini
