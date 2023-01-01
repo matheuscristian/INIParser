@@ -93,14 +93,14 @@ export class INIParser {
 		return section;
 	}
 
-	public getArray(key: string, section: Section | Items): Array<Items> {
+	public getArray(array: string, section: Section | Items): Array<Items> {
 		if (!Array.isArray(section) && !section.items) {
 			throw new errors.SectionMustHaveItems();
 		}
 
 		const list: Map<string, Items> = new Map();
 		for (const item of Array.isArray(section) ? section : <Items>section.items) {
-			if (item.key.startsWith(key) && item.key.includes("-")) {
+			if (item.key.startsWith(array) && item.key.includes("-")) {
 				const properties = item.key.split("-");
 				if (properties.length < 3) {
 					continue;
@@ -114,12 +114,12 @@ export class INIParser {
 			}
 		}
 
-		const array: Array<Items> = [];
+		const arrayItems: Array<Items> = [];
 		for (const [_, items] of list) {
-			array.push(items);
+			arrayItems.push(items);
 		}
 
-		return array;
+		return arrayItems;
 	}
 
 	public tree(s?: Section, father?: string): void {

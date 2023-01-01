@@ -16,7 +16,7 @@ export class INIParser {
 	protected readonly data: INIData;
 	constructor(filePath: string);
 	public get(path: string): Section | undefined;
-	public getArray(key: string, section: Section | Items): Array<Items>;
+	public getArray(array: string, section: Section | Items): Array<Items>;
 	public table(): void;
 	public static getValue(key: string, section: Section | Items): string | undefined;
 	public static hasKey(key: string, section: Section | Items): boolean;
