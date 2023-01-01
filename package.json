@@ -1,0 +1,17 @@
+{
+	"name": "ini-parser",
+	"main": "dist/index.js",
+	"types": "types/index.d.ts",
+	"scripts": {
+		"test": "tsc && node index.test.js"
+	},
+	"author": {
+		"name": "Matheus Cristian",
+		"email": "m4thews043@gmail.com",
+		"url": "https://github.com/matheuscristian"
+	},
+	"devDependencies": {
+		"@types/node": "^18.11.18",
+		"typescript": "^4.9.4"
+	}
+}
