@@ -18,7 +18,7 @@ This is a JavaScript parser for [INI configuration files](https://en.wikipedia.o
 ```js
 // Import class
 const INIParser = require(".").INIParser;
-// Declare class passing the file path
+// Instantiate class passing the file path
 const Parser = new INIParser("./stylesheet.ini");
 
 // Print every section
