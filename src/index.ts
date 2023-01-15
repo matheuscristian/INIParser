@@ -1,177 +1,57 @@
-import { existsSync as fileExists, readFileSync as readFile } from "fs";
-import * as errors from "./errors";
+import { readFileSync as readFile } from 'node:fs'
 
-interface Item {
-	key: string;
-	value: string;
+export interface Section {
+  [key: string]: string | { [name: string]: Section }
+  __children: { [name: string]: Section }
 }
 
-interface Section {
-	children?: INIData;
-	items?: Items;
+type Sections = { [name: string]: Section }
+
+export class INIFile {
+  private readonly data: Sections
+
+  constructor (data: Sections) {
+    this.data = data
+  }
+
+  public get global (): Sections {
+    return this.data
+  }
 }
 
-type Items = Array<Item>;
-type SectionName = string;
-type INIData = Map<SectionName, Section>;
+export function parseFile (path: string): INIFile {
+  const file = readFile(path, { encoding: 'utf-8' })
 
-export class INIParser {
-	protected readonly data: INIData;
+  const data: Section = { __children: {} }
 
-	constructor(filePath: string) {
-		if (!fileExists(filePath)) {
-			throw new errors.fileDoesNotExists(filePath);
-		}
+  let lastSection: Section = data
+  for (let line of file.split('\n')) {
+    line = line.trimStart().trimEnd()
 
-		this.data = new Map();
-		this.data.set("global", {});
+    if (line[0] === '#' || line[0] === ';' || line === '') continue
 
-		const fileLines: Array<string> = readFile(filePath, { encoding: "utf-8" }).split("\n");
+    if (line.startsWith('[') && line.endsWith(']')) {
+      lastSection = data
 
-		let lastSection: Section = this.global;
-		for (let line of fileLines) {
-			line = line.trimStart().trimEnd();
+      for (const sectionName of line.slice(1, -1).split('.')) {
+        if (!lastSection.__children[sectionName]) lastSection.__children[sectionName] = { __children: {} }
 
-			if (line[0] == ";" || line[0] == "#" || line == "") {
-				continue;
-			}
+        lastSection = lastSection.__children[sectionName]
+      }
+    } else {
+      let [key, value] = line.split('=')
 
-			if (line[0] == "[" && line[line.length - 1] == "]") {
-				if (line.includes(" ")) {
-					throw new errors.SectionCannotContainSpaces(line);
-				}
+      key = key.trimEnd()
+      if (key === '__children') continue
 
-				line = line.trim().slice(1, -1);
+      if (value) value = value.trimStart()
+      else value = ''
 
-				lastSection = this.global;
-				for (const sectionName of line.split(".")) {
-					if (!lastSection.children) {
-						lastSection.children = new Map();
-					}
+      lastSection[key] = value
+    }
+  }
 
-					if (!lastSection.children.has(sectionName)) {
-						lastSection.children.set(sectionName, {});
-					}
-
-					lastSection = <Section>lastSection.children.get(sectionName);
-				}
-			} else {
-				if (lastSection == this.global) {
-					throw new errors.CannotDeclareItemOutsideASection(line);
-				}
-
-				let [key, value] = line.split("=");
-
-				if (value) {
-					value = value.trimStart().trimEnd();
-				}
-
-				key = key.trimStart().trimEnd();
-
-				if (!lastSection.items) {
-					lastSection.items = [];
-				}
-
-				lastSection.items.push({ key, value });
-			}
-		}
-	}
-
-	public get(path: string): Section | undefined {
-		let section = this.global;
-		for (const sectionName of path.trimStart().trimEnd().split(".")) {
-			if (sectionName.includes(" ")) {
-				throw new errors.SectionCannotContainSpaces(sectionName);
-			}
-
-			if (!section.children || !section.children.has(sectionName)) {
-				return;
-			}
-
-			section = <Section>section.children.get(sectionName);
-		}
-		return section;
-	}
-
-	public getArray(array: string, section: Section | Items): Array<Items> {
-		if (!Array.isArray(section) && !section.items) {
-			throw new errors.SectionMustHaveItems();
-		}
-
-		const list: Map<string, Items> = new Map();
-		for (const item of Array.isArray(section) ? section : <Items>section.items) {
-			if (item.key.startsWith(array) && item.key.includes("-")) {
-				const properties = item.key.split("-");
-				if (properties.length < 3) {
-					continue;
-				}
-
-				if (!list.has(properties[2])) {
-					list.set(properties[2], []);
-				}
-
-				list.get(properties[2])?.push({ key: properties[1], value: item.value });
-			}
-		}
-
-		const arrayItems: Array<Items> = [];
-		for (const [_, items] of list) {
-			arrayItems.push(items);
-		}
-
-		return arrayItems;
-	}
-
-	public tree(s?: Section, father?: string): void {
-		if (!s) {
-			s = this.global;
-		}
-
-		if (!father) {
-			father = "global";
-		}
-
-		if (s.items) {
-			console.table(s.items);
-		}
-
-		if (s.children) {
-			for (const [sectionName, section] of s.children) {
-				if (section.items) {
-					console.log(sectionName, `(${father}):`);
-				}
-				this.tree(section, sectionName);
-			}
-		}
-	}
-
-	public static getValue(key: string, section: Section | Items): string | undefined {
-		if (!Array.isArray(section) && !section.items) {
-			throw new errors.SectionMustHaveItems();
-		}
-
-		for (const item of Array.isArray(section) ? section : <Items>section.items) {
-			if (item.key == key) {
-				return item.value;
-			}
-		}
-	}
-
-	public static hasKey(key: string, section: Section | Items): boolean {
-		if (!Array.isArray(section) && !section.items) {
-			throw new errors.SectionMustHaveItems();
-		}
-
-		for (const item of Array.isArray(section) ? section : <Items>section.items) {
-			if (item.key == key) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	protected get global(): Section {
-		return <Section>this.data.get("global");
-	}
+  return new INIFile(data.__children)
 }
+
+export default parseFile

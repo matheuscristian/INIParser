@@ -1,4 +1,6 @@
-const INIParser = require(".").INIParser;
-const Parser = new INIParser("./stylesheet.ini");
+const { parseFile } = require(".")
 
-Parser.tree();
+const ini_file = parseFile("./stylesheet.ini")
+
+console.table(ini_file.global.section)
+console.table(ini_file.global.section.__children)
